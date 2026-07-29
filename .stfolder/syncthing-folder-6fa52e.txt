@@ -1,0 +1,5 @@
+# This directory is a Syncthing folder marker.
+# Do not delete.
+
+folderID: idtex-hpmwe
+created: 2026-07-27T13:33:48+03:00
