@@ -1,6 +1,6 @@
 {
   "version": "1.1.0",
   "title": "Class Tool v1.1.0 Yayınlandı!",
-  "description": "Kullanım kılavuzu modülü eklendi, dinamik çift dil desteği (TR/EN) tamamlandı, Türkçe karakter (İ/I) hataları düzeltildi ve arayüz cilalandı.",
+  "description": "Kullanım kılavuzu modülü eklendi, dinamik çift dil desteği (TR/EN) tamamlandı, Türkçe karakter hataları düzeltildi ve arayüz cilalandı.",
   "download_url": "https://github.com/teacherhocaefendi/ClassTool/releases/tag/v1.1.0"
 }

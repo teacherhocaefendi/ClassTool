@@ -1,19 +1,14 @@
 import os
 from pathlib import Path
 
-# ==========================================
 # PATHS (Kullanıcı Belgelerim Klasörüne Sabitlendi)
-# ==========================================
 DOCS_DIR = Path.home() / "Documents" / "ClassTool"
 DB_DIR = DOCS_DIR / "database"
 DB_PATH = DB_DIR / "student_tracking.db"
 
-# Klasörlerin var olduğundan emin olalım
 DB_DIR.mkdir(parents=True, exist_ok=True)
 
-# ==========================================
 # UI CONSTANTS
-# ==========================================
 APP_NAME = "Smart Board Student Tracker"
 APP_VERSION = "1.1.0"
 
