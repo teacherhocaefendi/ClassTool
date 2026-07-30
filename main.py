@@ -11,6 +11,17 @@ from ui.login_window import LoginWindow
 from ui.main_window import MainWindow
 
 
+def get_asset_path(filename):
+    """Hem PyInstaller EXE çalışırken hem de normal Python çalışırken ikon yolunu kesin olarak bulur."""
+    if hasattr(sys, '_MEIPASS'):
+        # PyInstaller ile paketlendiğinde
+        base_path = sys._MEIPASS
+    else:
+        # Normal Python ile çalışırken
+        base_path = os.path.dirname(os.path.abspath(__file__))
+    return os.path.join(base_path, "assets", filename)
+
+
 def exception_hook(exctype, value, tb):
     print("=== BEKLENMEYEN HATA YAKALANDI ===")
     traceback.print_exception(exctype, value, tb)
@@ -28,7 +39,12 @@ def main():
     if hasattr(Qt.HighDpiScaleFactorRoundingPolicy, 'PassThrough'):
         QApplication.setHighDpiScaleFactorRoundingPolicy(Qt.HighDpiScaleFactorRoundingPolicy.PassThrough)
 
-    logger.info("Class Tool Uygulaması Başlatılıyor [Sürüm 1.0.0]...")
+    # UYGULAMA İKONUNU GLOBAL OLARAK BAĞLIYORUZ (TÜM PENCERELERDE GÖRÜNÜR)
+    icon_path = get_asset_path("app_icon.ico")
+    if os.path.exists(icon_path):
+        app.setWindowIcon(QIcon(icon_path))
+
+    logger.info("Class Tool Uygulaması Başlatılıyor [Sürüm 1.1.0]...")
 
     def on_app_exit():
         try:
@@ -38,10 +54,6 @@ def main():
             logger.error(f"Kapanışta veritabanı kilitlenirken hata: {e}")
 
     app.aboutToQuit.connect(on_app_exit)
-
-    icon_path = os.path.join("assets", "app_icon.png")
-    if os.path.exists(icon_path):
-        app.setWindowIcon(QIcon(icon_path))
 
     try:
         db.initialize_database()

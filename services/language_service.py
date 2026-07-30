@@ -3,7 +3,7 @@ class LanguageService:
 
     TRANSLATIONS = {
         "tr": {
-            "app_title": "Class Tool - Akıllı Tahta Öğrenci Takip [Sürüm 1.0.0]",
+            "app_title": "Class Tool - Akıllı Tahta Öğrenci Takip [Sürüm 1.1.0]",
             "roster": "📋 Öğrenci Listesi",
             "seating": "🪑 Oturma Planı",
             "groups": "🧩 Akıllı Gruplar",
@@ -116,7 +116,7 @@ class LanguageService:
             ]
         },
         "en": {
-            "app_title": "Class Tool - Smart Board Tracker [v1.0.0]",
+            "app_title": "Class Tool - Smart Board Tracker [v1.1.0]",
             "roster": "📋 Student Roster",
             "seating": "🪑 Seating Chart",
             "groups": "🧩 Smart Groups",

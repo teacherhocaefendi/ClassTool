@@ -14,7 +14,7 @@ from ui.views.help_view import HelpView
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("Class Tool - Smart Board Tracker [Alpha 1.0]")
+        self.setWindowTitle("Class Tool - Smart Board Tracker [Alpha 1.1.0]")
         self.setMinimumSize(1024, 600)
         self.resize(1280, 720)
 
@@ -53,7 +53,7 @@ class MainWindow(QMainWindow):
         sidebar_layout.setContentsMargins(0, 0, 0, 0)
         sidebar_layout.setSpacing(0)
 
-        logo_label = QLabel("Class Tool v1.0")
+        logo_label = QLabel("Class Tool v1.1")
         logo_label.setStyleSheet("color: #FFFFFF; font-size: 22px; font-weight: bold; padding: 18px;")
         logo_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         sidebar_layout.addWidget(logo_label)

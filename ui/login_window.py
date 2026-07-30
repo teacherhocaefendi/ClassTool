@@ -1,11 +1,23 @@
+import os
+import sys
 from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QLineEdit, QPushButton,
                              QLabel, QMessageBox)
 from PyQt6.QtCore import Qt, pyqtSignal
+from PyQt6.QtGui import QIcon
+
 from database.db_manager import db
 from utils.crypto import verify_pin, hash_pin
 from services.usb_security_service import USBWatcherWorker, generate_signature
 from services.language_service import LanguageService
 from ui.components.setup_dialog import SetupDialog
+
+
+def get_asset_path(filename):
+    if hasattr(sys, '_MEIPASS'):
+        base_path = sys._MEIPASS
+    else:
+        base_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    return os.path.join(base_path, "assets", filename)
 
 
 class LoginWindow(QWidget):
@@ -15,6 +27,12 @@ class LoginWindow(QWidget):
         super().__init__()
         self.setWindowTitle("Class Tool - Giriş Ekranı")
         self.resize(420, 260)
+
+        # Giriş penceresine ikonu mutlak yol ile bağlıyoruz
+        icon_path = get_asset_path("app_icon.ico")
+        if os.path.exists(icon_path):
+            self.setWindowIcon(QIcon(icon_path))
+
         self.usb_worker = None
         self.check_initial_setup()
         self.setup_ui()

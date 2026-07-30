@@ -1,5 +1,6 @@
 {
-  "version": "1.0.0",
-  "release_notes": "• Class Tool v1.0.0 İlk Kararlı Sürüm Yayınlandı.\n• Bireysel PDF Gelişim Raporu entegre edildi.\n• Performans ve arayüz iyileştirmeleri yapıldı.",
-  "download_url": "https://github.com/teacherhocaefendi/ClassTool/releases/latest/download/ClassTool.exe"
+  "version": "1.1.0",
+  "title": "Class Tool v1.1.0 Yayınlandı!",
+  "description": "Kullanım kılavuzu modülü eklendi, dinamik çift dil desteği (TR/EN) tamamlandı, Türkçe karakter (İ/I) hataları düzeltildi ve arayüz cilalandı.",
+  "download_url": "https://github.com/teacherhocaefendi/ClassTool/releases/tag/v1.1.0"
 }
