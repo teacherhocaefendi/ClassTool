@@ -47,7 +47,7 @@ class HomeworkView(QWidget):
         left_panel.addWidget(self.calendar)
 
         self.txt_title = QLineEdit()
-        self.txt_title.setPlaceholderText("Enter Homework Title (e.g., Unit 4 Workbook Ex. 2)")
+        self.txt_title.setPlaceholderText("Ödev Başlığı Girin (Örn: Ünite 4 Alıştırma 2)")
         left_panel.addWidget(self.txt_title)
 
         self.btn_assign = QPushButton(LanguageService.get("assign_homework"))
@@ -166,7 +166,8 @@ class HomeworkView(QWidget):
             self.load_students_for_checking(class_id, homework['title'], homework['id'])
         else:
             self.selected_homework_id = None
-            self.lbl_checklist_header.setText(f"📋 No homework assigned for {selected_date}")
+            no_hw_txt = f"📋 {selected_date} tarihine atanmış ödev yok" if LanguageService.current_lang == "tr" else f"📋 No homework assigned for {selected_date}"
+            self.lbl_checklist_header.setText(no_hw_txt)
             self.table.setRowCount(0)
 
     def assign_homework(self):
@@ -175,17 +176,19 @@ class HomeworkView(QWidget):
         due_date = self.calendar.selectedDate().toString("yyyy-MM-dd")
 
         if not class_id or not title:
-            QMessageBox.warning(self, "Warning", "Please enter a homework title.")
+            QMessageBox.warning(self, "Uyarı", "Lütfen bir ödev başlığı girin.")
             return
 
         db.add_homework(class_id, title, due_date)
-        QMessageBox.information(self, "Success", f"Homework assigned to {due_date} successfully!")
+        QMessageBox.information(self, "Başarılı", f"Ödev {due_date} tarihine atandı!")
         self.txt_title.clear()
         self.highlight_homework_dates()
         self.on_date_changed()
 
     def load_students_for_checking(self, class_id, homework_title, homework_id):
-        self.lbl_checklist_header.setText(f"📋 Checking: {homework_title}")
+        header_text = f"📋 Ödev Kontrol Ediliyor: {homework_title}" if LanguageService.current_lang == "tr" else f"📋 Checking: {homework_title}"
+        self.lbl_checklist_header.setText(header_text)
+
         saved_checks = {}
         with db.get_connection() as conn:
             cursor = conn.cursor()
@@ -197,11 +200,27 @@ class HomeworkView(QWidget):
             students = cursor.fetchall()
 
         self.table.setRowCount(len(students))
-        btn_style_done = "QPushButton { background-color: transparent; color: #36B37E; border: 2px solid #36B37E; border-radius: 6px; font-weight: bold; min-width: 90px; max-width: 100px; min-height: 26px; max-height: 26px; } QPushButton:checked { background-color: #36B37E; color: white; }"
-        btn_style_missing = "QPushButton { background-color: transparent; color: #FF5630; border: 2px solid #FF5630; border-radius: 6px; font-weight: bold; min-width: 90px; max-width: 100px; min-height: 26px; max-height: 26px; } QPushButton:checked { background-color: #FF5630; color: white; }"
+
+        # Buton stillerindeki kısıtlayıcı max-height ve min-height sınırlarını kaldırıp esnettik
+        btn_style_done = """
+            QPushButton {
+                background-color: transparent; color: #36B37E;
+                border: 2px solid #36B37E; border-radius: 6px;
+                font-weight: bold; padding: 4px 12px; font-size: 13px;
+            }
+            QPushButton:checked { background-color: #36B37E; color: white; }
+        """
+        btn_style_missing = """
+            QPushButton {
+                background-color: transparent; color: #FF5630;
+                border: 2px solid #FF5630; border-radius: 6px;
+                font-weight: bold; padding: 4px 12px; font-size: 13px;
+            }
+            QPushButton:checked { background-color: #FF5630; color: white; }
+        """
 
         for row, s in enumerate(students):
-            self.table.setRowHeight(row, 44)
+            self.table.setRowHeight(row, 50)  # Yüksekliği 50px yaparak butonların sıkışmasını engelledik
             no_item = QTableWidgetItem(str(s['student_number']))
             no_item.setData(Qt.ItemDataRole.UserRole, s['id'])
             no_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -234,18 +253,18 @@ class HomeworkView(QWidget):
 
             w_done, w_missing = QWidget(), QWidget()
             l_done, l_missing = QHBoxLayout(w_done), QHBoxLayout(w_missing)
-            l_done.setContentsMargins(0, 0, 0, 0);
-            l_missing.setContentsMargins(0, 0, 0, 0)
-            l_done.setAlignment(Qt.AlignmentFlag.AlignCenter);
+            l_done.setContentsMargins(4, 4, 4, 4)
+            l_missing.setContentsMargins(4, 4, 4, 4)
+            l_done.setAlignment(Qt.AlignmentFlag.AlignCenter)
             l_missing.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            l_done.addWidget(btn_done);
+            l_done.addWidget(btn_done)
             l_missing.addWidget(btn_missing)
-            self.table.setCellWidget(row, 2, w_done);
+            self.table.setCellWidget(row, 2, w_done)
             self.table.setCellWidget(row, 3, w_missing)
 
     def save_checks(self):
         if not self.selected_homework_id:
-            QMessageBox.warning(self, "Warning", "Please select a valid homework date first.")
+            QMessageBox.warning(self, "Uyarı", "Lütfen önce geçerli bir ödev tarihi seçin.")
             return
 
         checks_data = []
@@ -269,13 +288,12 @@ class HomeworkView(QWidget):
             conn.commit()
 
         db.save_homework_checks(self.selected_homework_id, checks_data)
-        QMessageBox.information(self, "Saved", "Homework statuses recorded to database.")
+        QMessageBox.information(self, "Kaydedildi", "Ödev durumları veritabanına kaydedildi.")
 
     def retranslate_ui(self):
         self.lbl_title.setText(LanguageService.get("homework_title"))
         self.btn_assign.setText(LanguageService.get("assign_homework"))
 
-        # Eğer bir tarih seçili değilse boş metni çevir, seçiliyse dokunma.
         if not self.selected_homework_id:
             self.lbl_checklist_header.setText(LanguageService.get("select_date_prompt"))
 

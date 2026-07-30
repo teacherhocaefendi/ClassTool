@@ -1,23 +1,18 @@
 import re
 from database.db_manager import db
-
+from utils.helpers import turkish_capitalize # YENİ IMPORT
 
 class EOkulParserService:
     @staticmethod
     def parse_raw_text(class_id, raw_text):
-        """
-        Parses raw text (from clipboard or OCR) into the database.
-        Expects format: [Number] [First Name] [Last Name] [Gender]
-        """
         if not raw_text.strip():
-            raise ValueError("The text area is empty.")
+            raise ValueError("Metin alanı boş.")
 
         lines = raw_text.strip().split('\n')
         students_data = []
 
         for line in lines:
             cleaned_line = re.sub(r'\t+', ' ', line).strip()
-            # Skip empty lines
             if not cleaned_line:
                 continue
 
@@ -32,10 +27,10 @@ class EOkulParserService:
 
                 name_parts = full_name.split()
                 if len(name_parts) > 1:
-                    last_name = name_parts[-1].capitalize()
-                    first_name = " ".join(name_parts[:-1]).title()
+                    last_name = turkish_capitalize(name_parts[-1])
+                    first_name = turkish_capitalize(" ".join(name_parts[:-1]))
                 else:
-                    first_name = full_name.title()
+                    first_name = turkish_capitalize(full_name)
                     last_name = ""
 
                 students_data.append({
@@ -46,8 +41,7 @@ class EOkulParserService:
                 })
 
         if not students_data:
-            raise ValueError(
-                "Could not find any valid student data formatting. \nEnsure format is: Number Name Surname Gender")
+            raise ValueError("Geçerli bir öğrenci listesi formatı bulunamadı.")
 
         db.add_multiple_students(class_id, students_data)
         return len(students_data)

@@ -2,14 +2,13 @@ import os
 import string
 import hashlib
 from PyQt6.QtCore import QThread, pyqtSignal
+from services.theme_and_log_service import logger
 
 KEY_FILE_NAME = ".class_tool.key"
-
 
 def generate_signature(pin_hash):
     """PIN hash'inden benzersiz bir USB imzası üretir."""
     return hashlib.sha256(f"AMMAR_SECURE_{pin_hash}".encode('utf-8')).hexdigest()
-
 
 class USBWatcherWorker(QThread):
     usb_found = pyqtSignal()
@@ -60,5 +59,5 @@ def create_usb_key_file(drive_letter, pin_hash):
             f.write(signature)
         return True
     except Exception as e:
-        print(f"USB Key creation error: {e}")
+        logger.error(f"USB Anahtarı oluşturma hatası: {e}")
         return False

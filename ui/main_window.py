@@ -8,6 +8,7 @@ from services.language_service import LanguageService
 from ui.views.student_view import StudentView
 from ui.components.timer_dialog import TimerDialog
 from ui.components.settings_dialog import SettingsDialog
+from ui.views.help_view import HelpView
 
 
 class MainWindow(QMainWindow):
@@ -21,6 +22,7 @@ class MainWindow(QMainWindow):
         self.group_view = None
         self.homework_view = None
         self.analytics_view = None
+        self.help_view = None
 
         self.setup_ui()
         self.apply_saved_theme()
@@ -56,15 +58,17 @@ class MainWindow(QMainWindow):
         logo_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         sidebar_layout.addWidget(logo_label)
 
+        # SEKMELER (DÜZELTİLDİ: KILAVUZ BUTONU DAHİL EDİLDİ)
         self.btn_roster = QPushButton(LanguageService.get("roster"))
         self.btn_seating = QPushButton(LanguageService.get("seating"))
         self.btn_groups = QPushButton(LanguageService.get("groups"))
         self.btn_homework = QPushButton(LanguageService.get("homework"))
         self.btn_analytics = QPushButton(LanguageService.get("analytics"))
+        self.btn_help = QPushButton(LanguageService.get("help_guide"))
 
         self.sidebar_buttons = [
             self.btn_roster, self.btn_seating, self.btn_groups,
-            self.btn_homework, self.btn_analytics
+            self.btn_homework, self.btn_analytics, self.btn_help
         ]
 
         for btn in self.sidebar_buttons:
@@ -123,7 +127,7 @@ class MainWindow(QMainWindow):
 
         main_layout.addWidget(sidebar)
 
-        # 2. STACKED WIDGET
+        # 2. STACKED WIDGET (DÜZELTİLDİ: TEKİL YÜKLEME VE BİNDİRME)
         self.stacked_widget = QStackedWidget()
         main_layout.addWidget(self.stacked_widget)
 
@@ -134,17 +138,20 @@ class MainWindow(QMainWindow):
         self.placeholder_2 = QWidget()
         self.placeholder_3 = QWidget()
         self.placeholder_4 = QWidget()
+        self.placeholder_5 = QWidget()
 
         self.stacked_widget.addWidget(self.placeholder_1)
         self.stacked_widget.addWidget(self.placeholder_2)
         self.stacked_widget.addWidget(self.placeholder_3)
         self.stacked_widget.addWidget(self.placeholder_4)
+        self.stacked_widget.addWidget(self.placeholder_5)
 
         self.btn_roster.clicked.connect(lambda: self.switch_view(0, self.btn_roster))
         self.btn_seating.clicked.connect(lambda: self.switch_view(1, self.btn_seating))
         self.btn_groups.clicked.connect(lambda: self.switch_view(2, self.btn_groups))
         self.btn_homework.clicked.connect(lambda: self.switch_view(3, self.btn_homework))
         self.btn_analytics.clicked.connect(lambda: self.switch_view(4, self.btn_analytics))
+        self.btn_help.clicked.connect(lambda: self.switch_view(5, self.btn_help))
 
         self.switch_view(0, self.btn_roster)
 
@@ -172,6 +179,14 @@ class MainWindow(QMainWindow):
             self.analytics_view = AnalyticsView()
             self.stacked_widget.removeWidget(self.placeholder_4)
             self.stacked_widget.insertWidget(4, self.analytics_view)
+
+        elif index == 5:
+            if self.help_view is None:
+                self.help_view = HelpView()
+                self.stacked_widget.removeWidget(self.placeholder_5)
+                self.stacked_widget.insertWidget(5, self.help_view)
+            else:
+                self.help_view.display_help_content(self.help_view.list_topics.currentRow())
 
         self.stacked_widget.setCurrentIndex(index)
 
@@ -212,6 +227,10 @@ class MainWindow(QMainWindow):
         self.btn_theme.setText(
             LanguageService.get("dark_mode") if self.current_theme == "light" else LanguageService.get("light_mode"))
 
+        # YENİ: Kılavuz ekranı yüklenmişse temasını anında yenile
+        if hasattr(self, 'help_view') and self.help_view:
+            self.help_view.refresh_theme()
+
     def toggle_language(self):
         new_lang = "en" if LanguageService.current_lang == "tr" else "tr"
         LanguageService.set_language(new_lang)
@@ -222,6 +241,7 @@ class MainWindow(QMainWindow):
         self.btn_groups.setText(LanguageService.get("groups"))
         self.btn_homework.setText(LanguageService.get("homework"))
         self.btn_analytics.setText(LanguageService.get("analytics"))
+        self.btn_help.setText(LanguageService.get("help_guide"))
         self.btn_lang.setText("🌐 Dil: Türkçe" if new_lang == "tr" else "🌐 Lang: English")
         self.btn_theme.setText(
             LanguageService.get("dark_mode") if self.current_theme == "light" else LanguageService.get("light_mode"))
@@ -244,6 +264,9 @@ class MainWindow(QMainWindow):
         if self.analytics_view and hasattr(self.analytics_view, 'retranslate_ui'):
             self.analytics_view.retranslate_ui()
 
+        if self.help_view and hasattr(self.help_view, 'retranslate_ui'):
+            self.help_view.retranslate_ui()
+
     def open_settings(self):
         dialog = SettingsDialog(self)
         dialog.exec()
@@ -251,3 +274,4 @@ class MainWindow(QMainWindow):
     def open_timer(self):
         self.timer_window = TimerDialog(self)
         self.timer_window.show()
+

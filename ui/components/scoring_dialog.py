@@ -3,71 +3,73 @@ from PyQt6.QtWidgets import (QDialog, QVBoxLayout, QGridLayout,
 from PyQt6.QtCore import Qt
 from database.db_manager import db
 
+
 class ScoringDialog(QDialog):
     def __init__(self, student_id, student_name, parent=None):
         super().__init__(parent)
         self.student_id = student_id
-        self.setWindowTitle(f"Score: {student_name}")
-        self.setMinimumSize(800, 600)  # Pencereni çok fazla küçültmeyi engeller
-        self.showMaximized()
+        self.setWindowTitle(f"⭐ Puan Ver: {student_name}")
+        self.setFixedSize(520, 380)  # Devasa tam ekran yerine kibar sabit boyut
         self.setup_ui(student_name)
 
     def setup_ui(self, student_name):
         layout = QVBoxLayout(self)
+        layout.setContentsMargins(20, 20, 20, 20)
         layout.setSpacing(15)
 
-        title = QLabel(f"Evaluating: {student_name}")
-        title.setStyleSheet("font-size: 20px; font-weight: bold; color: #172B4D;")
+        title = QLabel(f"👤 {student_name}")
+        title.setStyleSheet("font-size: 18px; font-weight: bold;")
         title.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(title)
 
         grid = QGridLayout()
-        grid.setSpacing(15)
+        grid.setSpacing(12)
 
-        # Positive Behaviors (+)
+        # Pozitif Davranışlar (+)
         positives = [
-            ("High Participation", "participation"),
-            ("Good Behavior / Leadership", "behavior")
+            ("Derse Katılım", "participation"),
+            ("Liderlik / Davranış", "behavior")
         ]
 
         for i, (label_text, tag) in enumerate(positives):
             btn = QPushButton(f"➕ {label_text}")
             btn.setStyleSheet("""
                 QPushButton {
-                    background-color: #36B37E; color: white; padding: 15px;
-                    font-size: 16px; font-weight: bold; border-radius: 8px;
+                    background-color: #10B981; color: white; padding: 12px;
+                    font-size: 14px; font-weight: bold; border-radius: 6px; border: none;
                 }
-                QPushButton:hover { background-color: #2b8f65; }
+                QPushButton:hover { background-color: #059669; }
             """)
             btn.clicked.connect(lambda checked, t=tag, n=label_text: self.log_event("+", t, n))
             grid.addWidget(btn, i, 0)
 
-        # Negative Behaviors (-)
+        # Negatif Davranışlar (-)
         negatives = [
-            ("Distracted / Passive", "participation"),
-            ("Disruptive Behavior", "behavior")
+            ("Dikkatsiz / Pasif", "participation"),
+            ("Olumsuz Davranış", "behavior")
         ]
 
         for i, (label_text, tag) in enumerate(negatives):
             btn = QPushButton(f"➖ {label_text}")
             btn.setStyleSheet("""
                 QPushButton {
-                    background-color: #FF5630; color: white; padding: 15px;
-                    font-size: 16px; font-weight: bold; border-radius: 8px;
+                    background-color: #EF4444; color: white; padding: 12px;
+                    font-size: 14px; font-weight: bold; border-radius: 6px; border: none;
                 }
-                QPushButton:hover { background-color: #cc4526; }
+                QPushButton:hover { background-color: #DC2626; }
             """)
             btn.clicked.connect(lambda checked, t=tag, n=label_text: self.log_event("-", t, n))
             grid.addWidget(btn, i, 1)
 
         layout.addLayout(grid)
 
-        btn_cancel = QPushButton("Cancel")
+        btn_cancel = QPushButton("İptal")
         btn_cancel.setStyleSheet("""
             QPushButton {
-                background-color: #DFE1E6; color: #172B4D; padding: 10px;
-                font-size: 16px; font-weight: bold; border-radius: 8px;
+                background-color: #374151; color: #F3F4F6; padding: 8px;
+                font-size: 13px; font-weight: bold; border-radius: 6px; border: none;
             }
+            QPushButton:hover { background-color: #4B5563; }
         """)
         btn_cancel.clicked.connect(self.reject)
         layout.addWidget(btn_cancel)
@@ -75,6 +77,6 @@ class ScoringDialog(QDialog):
     def log_event(self, log_type, tag, label_text):
         try:
             db.add_log_entry(self.student_id, log_type, tag, label_text)
-            self.accept() # Close dialog on success
+            self.accept()
         except Exception as e:
-            QMessageBox.critical(self, "Error", f"Failed to save log:\n{e}")
+            QMessageBox.critical(self, "Hata", f"Kayıt eklenirken hata oluştu:\n{e}")

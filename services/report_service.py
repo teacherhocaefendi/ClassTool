@@ -166,7 +166,7 @@ class ReportService:
 
     @staticmethod
     def export_student_pdf_report(student_id, file_path):
-        """Belirli bir öğrencinin istatistiklerini, katılım netlerini ve profil notlarını şık bir PDF kartına dönüştürür."""
+        """Belirli bir öğrencinin istatistiklerini, katılım netlerini, profil notlarını ve rozetlerini PDF yapısına dönüştürür."""
         try:
             import os
             from reportlab.lib.pagesizes import A4
@@ -175,8 +175,8 @@ class ReportService:
             from reportlab.lib import colors
             from reportlab.pdfbase import pdfmetrics
             from reportlab.pdfbase.ttfonts import TTFont
+            from services.badge_service import BadgeService
 
-            # 1. Türkçe Karakter Desteği için Windows Font Yolu Kontrolü ve Kaydı
             font_path = "C:\\Windows\\Fonts\\arial.ttf"
             if os.path.exists(font_path):
                 pdfmetrics.registerFont(TTFont('ArialCustom', font_path))
@@ -187,11 +187,15 @@ class ReportService:
                 base_font = 'Helvetica'
                 base_font_bold = 'Helvetica-Bold'
 
-            # 2. Öğrenci Bilgilerini ve Profilini Çek
             with db.get_connection() as conn:
                 cursor = conn.cursor()
                 cursor.execute("""
-                               SELECT s.student_number, s.first_name, s.last_name, s.gender, c.name as class_name
+                               SELECT s.student_number,
+                                      s.first_name,
+                                      s.last_name,
+                                      s.gender,
+                                      s.class_id,
+                                      c.name as class_name
                                FROM students s
                                         JOIN classes c ON s.class_id = c.id
                                WHERE s.id = ?
@@ -200,17 +204,19 @@ class ReportService:
                 if not student:
                     raise Exception("Öğrenci bulunamadı.")
 
+                # Otomatik rozet hesaplamasını PDF basılmadan önce güncelleyelim
+                BadgeService.calculate_auto_badges_for_class(student['class_id'])
+                badges = BadgeService.get_student_badges(student_id)
+
                 cursor.execute("SELECT * FROM student_profiles WHERE student_id = ?", (student_id,))
                 profile = cursor.fetchone()
 
-                # Ödev istatistikleri
                 cursor.execute("SELECT status FROM homework_checks WHERE student_id = ?", (student_id,))
                 hw_checks = cursor.fetchall()
                 total_hw = len(hw_checks)
                 done_hw = sum(1 for c in hw_checks if c['status'] == 'Done')
                 missing_hw = sum(1 for c in hw_checks if c['status'] == 'Missing')
 
-                # Log istatistikleri (Katılım / Davranış)
                 cursor.execute("SELECT log_type, category_tag FROM logs WHERE student_id = ?", (student_id,))
                 logs = cursor.fetchall()
                 part_net = sum(1 for l in logs if
@@ -225,77 +231,41 @@ class ReportService:
                 beh_net -= sum(
                     1 for l in logs if l['log_type'] in '-' and l['category_tag'] in ['behavior', 'Davranış'])
 
-            # 3. Cinsiyete Göre Dinamik Renk Paleti Belirleme
             gender_str = str(student['gender']).lower()
             if gender_str in ['female', 'kız', 'k']:
-                # Kız öğrenciler için: Pembe, sarı ve beyaz tonları
-                primary_color = colors.HexColor('#DB2777')  # Canlı Koyu Pembe
-                header_bg = colors.HexColor('#FCE7F3')  # Açık Yumuşak Pembe Arkaplan
-                table_header_bg = colors.HexColor('#BE185D')  # Koyu Pembe Tablo Başlığı
-                accent_color = colors.HexColor('#F59E0B')  # Sarı / Altın Vurgu
-                box_bg = colors.HexColor('#FFFBEB')  # Açık Sarı Not Kutusu
-                box_border = colors.HexColor('#FCD34D')  # Sarı Çerçeve
+                primary_color = colors.HexColor('#DB2777')
+                header_bg = colors.HexColor('#FCE7F3')
+                table_header_bg = colors.HexColor('#BE185D')
+                accent_color = colors.HexColor('#F59E0B')
+                box_bg = colors.HexColor('#FFFBEB')
+                box_border = colors.HexColor('#FCD34D')
             else:
-                # Erkek öğrenciler için: Mavi ve lacivert tonları
-                primary_color = colors.HexColor('#1E40AF')  # Lacivert
-                header_bg = colors.HexColor('#E0E7FF')  # Açık Mavi Arkaplan
-                table_header_bg = colors.HexColor('#1E3A8A')  # Koyu Lacivert Tablo Başlığı
-                accent_color = colors.HexColor('#3B82F6')  # Mavi Vurgu
-                box_bg = colors.HexColor('#EFF6FF')  # Açık Mavi Not Kutusu
-                box_border = colors.HexColor('#93C5FD')  # Mavi Çerçeve
+                primary_color = colors.HexColor('#1E40AF')
+                header_bg = colors.HexColor('#E0E7FF')
+                table_header_bg = colors.HexColor('#1E3A8A')
+                accent_color = colors.HexColor('#3B82F6')
+                box_bg = colors.HexColor('#EFF6FF')
+                box_border = colors.HexColor('#93C5FD')
 
-            # 4. PDF Doküman Yapısı
             doc = SimpleDocTemplate(file_path, pagesize=A4, rightMargin=40, leftMargin=40, topMargin=40,
                                     bottomMargin=40)
             story = []
             styles = getSampleStyleSheet()
 
-            title_style = ParagraphStyle(
-                'DocTitle',
-                parent=styles['Heading1'],
-                fontName=base_font_bold,
-                fontSize=18,
-                textColor=primary_color,
-                alignment=1,
-                spaceAfter=10
-            )
+            title_style = ParagraphStyle('DocTitle', parent=styles['Heading1'], fontName=base_font_bold, fontSize=18,
+                                         textColor=primary_color, alignment=1, spaceAfter=10)
+            sub_style = ParagraphStyle('SubTitle', parent=styles['Normal'], fontName=base_font, fontSize=10,
+                                       textColor=colors.HexColor('#4B5563'), alignment=1, spaceAfter=20)
+            section_style = ParagraphStyle('SectionHeading', parent=styles['Heading2'], fontName=base_font_bold,
+                                           fontSize=13, textColor=primary_color, spaceBefore=12, spaceAfter=6)
+            body_style = ParagraphStyle('BodyDark', parent=styles['Normal'], fontName=base_font, fontSize=10,
+                                        textColor=colors.HexColor('#1F2937'), leading=14)
 
-            sub_style = ParagraphStyle(
-                'SubTitle',
-                parent=styles['Normal'],
-                fontName=base_font,
-                fontSize=10,
-                textColor=colors.HexColor('#4B5563'),
-                alignment=1,
-                spaceAfter=20
-            )
-
-            section_style = ParagraphStyle(
-                'SectionHeading',
-                parent=styles['Heading2'],
-                fontName=base_font_bold,
-                fontSize=13,
-                textColor=primary_color,
-                spaceBefore=12,
-                spaceAfter=6
-            )
-
-            body_style = ParagraphStyle(
-                'BodyDark',
-                parent=styles['Normal'],
-                fontName=base_font,
-                fontSize=10,
-                textColor=colors.HexColor('#1F2937'),
-                leading=14
-            )
-
-            # Başlıklar
             story.append(Paragraph("<b>ÖĞRENCİ BİREYSEL GELİŞİM RAPORU</b>", title_style))
             story.append(Paragraph(
                 f"Sınıf: {student['class_name']} | Rapor Tarihi: {datetime.datetime.now().strftime('%d.%m.%Y')}",
                 sub_style))
 
-            # Öğrenci Künye Tablosu
             data_info = [
                 [Paragraph("<b>Öğrenci No:</b>", body_style), Paragraph(str(student['student_number']), body_style)],
                 [Paragraph("<b>Adı Soyadı:</b>", body_style),
@@ -312,7 +282,20 @@ class ReportService:
             story.append(t_info)
             story.append(Spacer(1, 10))
 
-            # Performans İstatistikleri Tablosu
+            # ROZETLER BÖLÜMÜ (PDF UYUMLU METİN ETİKETLERİ)
+            if badges:
+                story.append(Paragraph("<b>Kazanılan Başarı Rozetleri</b>", section_style))
+                badge_text_list = [f"<b>[{b['title']}]</b>: {b['desc']}" for b in badges]
+                data_b = [[Paragraph(b_txt, body_style)] for b_txt in badge_text_list]
+                t_b = Table(data_b, colWidths=[510])
+                t_b.setStyle(TableStyle([
+                    ('BACKGROUND', (0, 0), (-1, -1), header_bg),
+                    ('BOX', (0, 0), (-1, -1), 1, accent_color),
+                    ('PADDING', (0, 0), (-1, -1), 6),
+                ]))
+                story.append(t_b)
+                story.append(Spacer(1, 10))
+
             story.append(Paragraph("<b>Akademik ve Ders İçi Performans Özetleri</b>", section_style))
             data_stats = [
                 [Paragraph(f"<font color='white'><b>Metrik / Kriter</b></font>", body_style),
@@ -332,7 +315,6 @@ class ReportService:
             story.append(t_stats)
             story.append(Spacer(1, 10))
 
-            # Profil Bilgileri & Etiketler
             if profile:
                 story.append(Paragraph("<b>Kişilik Etiketleri ve Profil Puanları</b>", section_style))
                 soc = profile['sociability_score'] or 3
@@ -356,7 +338,6 @@ class ReportService:
                 story.append(t_prof)
                 story.append(Spacer(1, 10))
 
-                # Öğretmen Notları Kutusu
                 story.append(Paragraph("<b>Öğretmen Gözlem Notları:</b>", section_style))
                 data_notes = [[Paragraph(notes, body_style)]]
                 t_notes = Table(data_notes, colWidths=[510])

@@ -4,12 +4,12 @@ from cryptography.fernet import Fernet
 
 
 def hash_pin(pin: str) -> str:
-    """Hashes a PIN using SHA-256 for local verification."""
+    """Yerel doğrulama için PIN'i SHA-256 kullanarak şifreler."""
     return hashlib.sha256(pin.encode('utf-8')).hexdigest()
 
 
 def verify_pin(stored_hash: str, provided_pin: str) -> bool:
-    """Verifies a provided PIN against the stored hash."""
+    """Verilen PIN'in saklanan hash ile eşleşip eşleşmediğini doğrular."""
     return stored_hash == hash_pin(provided_pin)
 
 
@@ -26,11 +26,9 @@ def encrypt_file(file_path: str, key_str: str):
         with open(file_path, 'rb') as f:
             data = f.read()
 
-        # Zaten şifreli mi kontrol etmek için deneme yapalım, değilse şifreleyelim
         try:
             fernet.decrypt(data)
-            # Zaten şifreliymiş, tekrar şifreleme
-            return
+            return  # Zaten şifreli
         except Exception:
             pass
 
@@ -38,7 +36,9 @@ def encrypt_file(file_path: str, key_str: str):
         with open(file_path, 'wb') as f:
             f.write(encrypted)
     except Exception as e:
-        print(f"Encryption error: {e}")
+        # Circular import'u önlemek için logger'ı sadece ihtiyaç anında içeri aktarıyoruz
+        from services.theme_and_log_service import logger
+        logger.error(f"Şifreleme hatası: {e}")
 
 
 def decrypt_file(file_path: str, key_str: str):
@@ -52,5 +52,4 @@ def decrypt_file(file_path: str, key_str: str):
         with open(file_path, 'wb') as f:
             f.write(decrypted)
     except Exception:
-        # Dosya zaten şifresizse veya ilk kez oluşturuluyorsa pas geç
         pass

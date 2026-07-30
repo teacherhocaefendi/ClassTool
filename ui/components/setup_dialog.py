@@ -7,7 +7,7 @@ from utils.crypto import hash_pin
 class SetupDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setWindowTitle("🚀 First Time Setup - Master Password")
+        self.setWindowTitle("🚀 İlk Kurulum - Yönetici Şifresi")
         self.setFixedSize(400, 260)
         self.setup_ui()
 
@@ -15,27 +15,27 @@ class SetupDialog(QDialog):
         layout = QVBoxLayout(self)
         layout.setSpacing(15)
 
-        title = QLabel("Welcome! Set Your Access PIN")
-        title.setStyleSheet("font-size: 16px; font-weight: bold; color: #0052CC;")
+        title = QLabel("Hoş Geldiniz! Sisteme Giriş Şifrenizi Belirleyin")
+        title.setStyleSheet("font-size: 15px; font-weight: bold; color: #0052CC;")
         layout.addWidget(title)
 
         form = QFormLayout()
         self.pin_input = QLineEdit()
         self.pin_input.setEchoMode(QLineEdit.EchoMode.Password)
-        self.pin_input.setPlaceholderText("Enter 4-6 digit PIN")
+        self.pin_input.setPlaceholderText("4 veya 6 haneli bir PIN girin")
 
         self.confirm_input = QLineEdit()
         self.confirm_input.setEchoMode(QLineEdit.EchoMode.Password)
-        self.confirm_input.setPlaceholderText("Confirm PIN")
+        self.confirm_input.setPlaceholderText("PIN'i tekrar girin")
 
         for inp in [self.pin_input, self.confirm_input]:
             inp.setStyleSheet("padding: 8px; border: 1px solid #DFE1E6; border-radius: 4px;")
 
-        form.addRow("New PIN:", self.pin_input)
-        form.addRow("Confirm PIN:", self.confirm_input)
+        form.addRow("Yeni Şifre:", self.pin_input)
+        form.addRow("Şifreyi Onayla:", self.confirm_input)
         layout.addLayout(form)
 
-        btn_save = QPushButton("💾 Save & Start")
+        btn_save = QPushButton("💾 Kaydet & Başla")
         btn_save.setStyleSheet("background-color: #36B37E; color: white; padding: 10px; font-weight: bold; border-radius: 4px;")
         btn_save.clicked.connect(self.save_setup)
         layout.addWidget(btn_save)
@@ -45,11 +45,11 @@ class SetupDialog(QDialog):
         p2 = self.confirm_input.text().strip()
 
         if len(p1) < 4:
-            QMessageBox.warning(self, "Error", "PIN must be at least 4 digits.")
+            QMessageBox.warning(self, "Hata", "Şifreniz en az 4 haneli olmalıdır.")
             return
 
         if p1 != p2:
-            QMessageBox.warning(self, "Error", "PINs do not match.")
+            QMessageBox.warning(self, "Hata", "Girdiğiniz şifreler uyuşmuyor.")
             return
 
         hashed = hash_pin(p1)
@@ -61,5 +61,5 @@ class SetupDialog(QDialog):
             """, (hashed,))
             conn.commit()
 
-        QMessageBox.information(self, "Success", "Master PIN configured successfully!")
+        QMessageBox.information(self, "Başarılı", "Yönetici şifresi başarıyla ayarlandı!")
         self.accept()

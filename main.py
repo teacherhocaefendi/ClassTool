@@ -1,34 +1,41 @@
 import sys
 import os
+import traceback
 from PyQt6.QtWidgets import QApplication, QMessageBox
 from PyQt6.QtGui import QIcon
-from PyQt6.QtCore import QTimer
+from PyQt6.QtCore import QTimer, Qt
 
 from database.db_manager import db
 from services.theme_and_log_service import logger, ThemeManager, LOG_FILE
 from ui.login_window import LoginWindow
 from ui.main_window import MainWindow
-import sys
-import traceback
+
 
 def exception_hook(exctype, value, tb):
-    print("=== CRASH DETECTED ===")
+    print("=== BEKLENMEYEN HATA YAKALANDI ===")
     traceback.print_exception(exctype, value, tb)
     sys.__excepthook__(exctype, value, tb)
 
+
 sys.excepthook = exception_hook
 
-def main():
-    app = QApplication(sys.argv)
-    logger.info("Starting Class Tool Application [Alpha 1.0]...")
 
-    # Uygulama kapanırken DB dosyasını otomatik kilitlesin
+def main():
+    os.environ["QT_AUTO_SCREEN_SCALE_FACTOR"] = "1"
+
+    app = QApplication(sys.argv)
+
+    if hasattr(Qt.HighDpiScaleFactorRoundingPolicy, 'PassThrough'):
+        QApplication.setHighDpiScaleFactorRoundingPolicy(Qt.HighDpiScaleFactorRoundingPolicy.PassThrough)
+
+    logger.info("Class Tool Uygulaması Başlatılıyor [Sürüm 1.0.0]...")
+
     def on_app_exit():
         try:
-            logger.info("Encrypting and locking database before exit...")
+            logger.info("Uygulama kapatılıyor, veritabanı kilitleniyor...")
             db.lock_database()
         except Exception as e:
-            logger.error(f"Error locking database on exit: {e}")
+            logger.error(f"Kapanışta veritabanı kilitlenirken hata: {e}")
 
     app.aboutToQuit.connect(on_app_exit)
 
@@ -41,23 +48,24 @@ def main():
         current_theme = ThemeManager.get_current_theme()
         ThemeManager.apply_theme(app, current_theme)
     except Exception as e:
-        logger.error(f"Initialization error: {e}")
-        QMessageBox.critical(None, "Fatal Error", f"Veritabanı başlatılamadı!\nLog Dosyası:\n{LOG_FILE}")
+        logger.error(f"Başlatma hatası: {e}")
+        QMessageBox.critical(None, "Kritik Hata", f"Veritabanı başlatılamadı!\n\nLog Dosyası:\n{LOG_FILE}")
         sys.exit(1)
 
     login_win = LoginWindow()
 
     def on_login_success():
-        global main_win  # <-- ÇÖZÜM: Değişkeni global yaparak bellekten silinmesini engelliyoruz
+        global main_win
         try:
-            logger.info("Login successful. Initializing MainWindow.")
+            logger.info("Giriş başarılı. Ana pencere yükleniyor.")
             main_win = MainWindow()
             main_win.show()
             login_win.hide()
             QTimer.singleShot(400, main_win.check_todays_homework_notifications)
         except Exception as ex:
-            logger.error(f"MainWindow crash: {ex}")
-            QMessageBox.critical(None, "Crash Error", f"Uygulama çalışırken bir hata oluştu.\nLog Kaydı:\n{LOG_FILE}\n\nHata: {str(ex)}")
+            logger.error(f"Ana pencere çökme hatası: {ex}")
+            QMessageBox.critical(None, "Sistem Hatası",
+                                 f"Uygulama çalışırken beklenmeyen bir hata oluştu.\n\nLog Kaydı:\n{LOG_FILE}\n\nHata Detayı: {str(ex)}")
 
     login_win.login_successful.connect(on_login_success)
     login_win.show()
@@ -65,8 +73,8 @@ def main():
     try:
         sys.exit(app.exec())
     except Exception as err:
-        logger.critical(f"Unhandled exception: {err}")
-        QMessageBox.critical(None, "Critical Error", f"Kritik hata yakalandı!\nLog Konumu:\n{LOG_FILE}")
+        logger.critical(f"Yakalanamayan kritik hata: {err}")
+        QMessageBox.critical(None, "Kritik Hata", f"Kritik bir sistem hatası yakalandı!\n\nLog Konumu:\n{LOG_FILE}")
 
 
 if __name__ == "__main__":

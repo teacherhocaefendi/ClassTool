@@ -13,7 +13,7 @@ class LoginWindow(QWidget):
 
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("Smart Board Access - Lock Screen")
+        self.setWindowTitle("Class Tool - Giriş Ekranı")
         self.resize(420, 260)
         self.usb_worker = None
         self.check_initial_setup()
@@ -35,12 +35,12 @@ class LoginWindow(QWidget):
         layout.setSpacing(15)
 
         self.title_label = QLabel(LanguageService.get("login_title"))
-        self.title_label.setStyleSheet("font-size: 20px; font-weight: bold;")
+        self.title_label.setStyleSheet("font-size: 18px; font-weight: bold;")
         layout.addWidget(self.title_label, alignment=Qt.AlignmentFlag.AlignCenter)
 
         self.pin_input = QLineEdit()
         self.pin_input.setEchoMode(QLineEdit.EchoMode.Password)
-        self.pin_input.setPlaceholderText("PIN")
+        self.pin_input.setPlaceholderText("PIN Şifresi")
         self.pin_input.setMaxLength(6)
         self.pin_input.setStyleSheet("""
             QLineEdit { padding: 12px; font-size: 18px; border: 2px solid #0052CC; border-radius: 6px; }
@@ -89,7 +89,7 @@ class LoginWindow(QWidget):
             self.stop_usb_watcher()
             self.login_successful.emit()
         else:
-            QMessageBox.warning(self, "Access Denied", "Invalid PIN. Please try again.")
+            QMessageBox.warning(self, "Erişim Engellendi", "Hatalı PIN Şifresi. Lütfen tekrar deneyin.")
             self.pin_input.clear()
 
     def closeEvent(self, event):

@@ -132,8 +132,7 @@ class StudentView(QWidget):
         self.btn_export = QPushButton(LanguageService.get("export_excel"))
 
         # YENİ BUTON: Sözlü Notu Hesapla
-        self.btn_oral_grade = QPushButton(
-            "📊 Sözlü Notu Hesapla" if LanguageService.current_lang == "tr" else "📊 Oral Grade")
+        self.btn_oral_grade = QPushButton(LanguageService.get("oral_grade_btn"))
 
         self.btn_add_student.setStyleSheet("background-color: #0052CC; color: white;")
         self.btn_import_excel.setStyleSheet("background-color: #0052CC; color: white;")
@@ -325,7 +324,7 @@ class StudentView(QWidget):
     def open_edit_student_dialog(self):
         selected_rows = self.table.selectionModel().selectedRows()
         if not selected_rows:
-            QMessageBox.warning(self, "Warning", "Lütfen düzenlemek için bir öğrenci seçin.")
+            QMessageBox.warning(self, LanguageService.get("warning"), LanguageService.get("select_student_first"))
             return
 
         row = selected_rows[0].row()
@@ -360,8 +359,8 @@ class StudentView(QWidget):
         if not class_id:
             return
 
-        reply = QMessageBox.question(self, "Confirm Delete",
-                                     f"'{class_name}' sınıfını silmek istediğinize emin misiniz?",
+        confirm_msg = LanguageService.get("confirm_delete_class").format(class_name=class_name)
+        reply = QMessageBox.question(self, LanguageService.get("warning"), confirm_msg,
                                      QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
         if reply == QMessageBox.StandardButton.Yes:
             db.delete_class(class_id)
@@ -370,15 +369,15 @@ class StudentView(QWidget):
     def delete_selected_student(self):
         selected_rows = self.table.selectionModel().selectedRows()
         if not selected_rows:
-            QMessageBox.warning(self, "Warning", "Lütfen silmek için bir öğrenci seçin.")
+            QMessageBox.warning(self, LanguageService.get("warning"), LanguageService.get("select_student_first"))
             return
 
         row = selected_rows[0].row()
         student_id = self.table.item(row, 0).data(Qt.ItemDataRole.UserRole)
         student_name = f"{self.table.item(row, 1).text()} {self.table.item(row, 2).text()}"
 
-        reply = QMessageBox.question(self, "Confirm Delete",
-                                     f"{student_name} adlı öğrenciyi silmek istediğinize emin misiniz?",
+        confirm_msg = LanguageService.get("confirm_delete_student").format(student_name=student_name)
+        reply = QMessageBox.question(self, LanguageService.get("warning"), confirm_msg,
                                      QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
         if reply == QMessageBox.StandardButton.Yes:
             db.delete_student(student_id)
@@ -440,7 +439,7 @@ class StudentView(QWidget):
     def open_randomizer(self):
         class_id = self.class_selector.currentData()
         if not class_id:
-            QMessageBox.warning(self, "Warning", "Lütfen önce bir sınıf seçin.")
+            QMessageBox.warning(self, LanguageService.get("warning"), LanguageService.get("select_class_first"))
             return
 
         dialog = RandomPicker(class_id, parent=None)
@@ -498,6 +497,7 @@ class StudentView(QWidget):
                 break
 
     def retranslate_ui(self):
+        self.btn_oral_grade.setText(LanguageService.get("oral_grade_btn"))
         self.btn_cat_class.setText(LanguageService.get("class_mgmt"))
         self.btn_cat_data.setText(LanguageService.get("data_ops"))
         self.btn_cat_actions.setText(LanguageService.get("lesson_part"))
@@ -533,7 +533,7 @@ class StudentView(QWidget):
         class_id = self.class_selector.currentData()
         class_name = self.class_selector.currentText()
         if not class_id:
-            QMessageBox.warning(self, "Uyarı", "Lütfen önce bir sınıf seçin.")
+            QMessageBox.warning(self, LanguageService.get("warning"), LanguageService.get("select_class_first"))
             return
 
         dialog = OralGradeDialog(class_id, class_name, self)

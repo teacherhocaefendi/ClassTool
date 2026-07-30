@@ -1,5 +1,6 @@
 import os
 import logging
+import datetime
 from pathlib import Path
 from database.db_manager import db
 
@@ -7,7 +8,9 @@ DOCS_DIR = Path.home() / "Documents" / "ClassTool"
 LOG_DIR = DOCS_DIR / "logs"
 LOG_DIR.mkdir(parents=True, exist_ok=True)
 
-LOG_FILE = LOG_DIR / "app.log"
+# Bugünün tarihiyle dinamik log dosyası ismi oluşturuyoruz (Örn: app_2026-07-29.log)
+today_str = datetime.datetime.now().strftime("%Y-%m-%d")
+LOG_FILE = LOG_DIR / f"app_{today_str}.log"
 
 logging.basicConfig(
     filename=str(LOG_FILE),
@@ -96,7 +99,7 @@ class ThemeManager:
                                """, (theme_name,))
                 conn.commit()
         except Exception as e:
-            logger.error(f"Error saving theme: {e}")
+            logger.error(f"Tema kaydedilirken hata oluştu: {e}")
 
     @classmethod
     def apply_theme(cls, app_instance, theme_name):

@@ -58,7 +58,7 @@ class TimerDialog(QDialog):
         # Süre ekleme butonları
         btn_layout = QHBoxLayout()
         for mins in [1, 5, 10, 40]:
-            b = QPushButton(f"+{mins} Min")
+            b = QPushButton(f"+{mins} Dk")
             b.setStyleSheet("background-color: #242526; color: #E4E6EB; border: 1px solid #3A3B3C; padding: 8px 12px; font-weight: bold; border-radius: 6px;")
             b.clicked.connect(lambda _, m=mins: self.add_countdown_time(m))
             btn_layout.addWidget(b)
