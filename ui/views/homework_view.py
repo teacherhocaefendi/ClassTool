@@ -87,13 +87,30 @@ class HomeworkView(QWidget):
         main_layout.addLayout(right_panel, stretch=2)
 
     def load_classes(self):
+        current_class_id = self.class_selector.currentData()
+
         self.class_selector.blockSignals(True)
         self.class_selector.clear()
         classes = db.get_classes()
         for cls in classes:
             self.class_selector.addItem(cls['name'], cls['id'])
         self.class_selector.blockSignals(False)
-        self.on_class_changed()
+
+        if self.class_selector.count() > 0:
+            idx = self.class_selector.findData(current_class_id)
+            if idx >= 0:
+                self.class_selector.setCurrentIndex(idx)
+            else:
+                self.class_selector.setCurrentIndex(0)
+            self.on_class_changed()
+        else:
+            # DÜZELTME: Sınıf yoksa ödev tablosunu ve başlıkları temizle
+            self.table.setRowCount(0)
+            self.lbl_checklist_header.setText(LanguageService.get("select_class_first"))
+            default_format = QTextCharFormat()
+            for qdate in self._highlighted_qdates:
+                self.calendar.setDateTextFormat(qdate, default_format)
+            self._highlighted_qdates = []
 
     def on_class_changed(self):
         self.highlight_homework_dates()

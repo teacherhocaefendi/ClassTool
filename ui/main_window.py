@@ -4,12 +4,12 @@ from PyQt6.QtCore import Qt, QTimer
 from database.db_manager import db
 from services.theme_and_log_service import logger, ThemeManager
 from services.language_service import LanguageService
-
 from ui.views.student_view import StudentView
 from ui.components.timer_dialog import TimerDialog
 from ui.components.settings_dialog import SettingsDialog
 from ui.views.help_view import HelpView
-
+from services.update_service import UpdateCheckWorker
+from ui.components.update_dialog import UpdateProgressDialog
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -17,7 +17,7 @@ class MainWindow(QMainWindow):
         self.setWindowTitle("Class Tool - Smart Board Tracker [Alpha 1.1.0]")
         self.setMinimumSize(1024, 600)
         self.resize(1280, 720)
-
+        self.check_for_updates()
         self.seating_view = None
         self.group_view = None
         self.homework_view = None
@@ -53,7 +53,7 @@ class MainWindow(QMainWindow):
         sidebar_layout.setContentsMargins(0, 0, 0, 0)
         sidebar_layout.setSpacing(0)
 
-        logo_label = QLabel("Class Tool v1.1")
+        logo_label = QLabel("Class Tool v1.2")
         logo_label.setStyleSheet("color: #FFFFFF; font-size: 22px; font-weight: bold; padding: 18px;")
         logo_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         sidebar_layout.addWidget(logo_label)
@@ -152,7 +152,7 @@ class MainWindow(QMainWindow):
         self.btn_homework.clicked.connect(lambda: self.switch_view(3, self.btn_homework))
         self.btn_analytics.clicked.connect(lambda: self.switch_view(4, self.btn_analytics))
         self.btn_help.clicked.connect(lambda: self.switch_view(5, self.btn_help))
-
+        self.check_for_updates()
         self.switch_view(0, self.btn_roster)
 
     def switch_view(self, index, active_button):
@@ -190,8 +190,11 @@ class MainWindow(QMainWindow):
 
         self.stacked_widget.setCurrentIndex(index)
 
+        # DÜZELTME: Sekmeye geçildiğinde sınıfları ve verileri mutlaka yenile (Grup ekranı artık sınıfları görecek)
         if index == 1 and self.seating_view:
-            self.seating_view.load_data()
+            self.seating_view.load_classes()
+        elif index == 2 and self.group_view:
+            self.group_view.load_classes()
         elif index == 3 and self.homework_view:
             self.homework_view.load_classes()
         elif index == 4 and self.analytics_view:
@@ -275,3 +278,31 @@ class MainWindow(QMainWindow):
         self.timer_window = TimerDialog(self)
         self.timer_window.show()
 
+    def check_for_updates(self):
+        self.update_worker = UpdateCheckWorker()
+        self.update_worker.update_available.connect(self.on_update_available)
+        self.update_worker.start()
+
+    def on_update_available(self, data):
+        remote_version = data.get("version", "1.2.0")
+        download_url = data.get("download_url", "")
+        changelog = data.get("changelog", "Yeni güncellemeler ve performans iyileştirmeleri eklendi.")
+
+        msg_box = QMessageBox(self)
+        msg_box.setWindowTitle("🚀 Yeni Güncelleme Mevcut!")
+        msg_box.setText(f"<b>ClassTool v{remote_version} yayınlandı!</b>\n\n<b>Yenilikler:</b>\n{changelog}")
+        msg_box.setIcon(QMessageBox.Icon.Information)
+
+        btn_update_now = msg_box.addButton("⚡ Şimdi Otomatik Güncelle", QMessageBox.ButtonRole.AcceptRole)
+        btn_later = msg_box.addButton("Daha Sonra", QMessageBox.ButtonRole.RejectRole)
+        msg_box.setDefaultButton(btn_update_now)
+
+        msg_box.exec()
+
+        if msg_box.clickedButton() == btn_update_now:
+            if download_url:
+                dlg = UpdateProgressDialog(download_url, remote_version, changelog, self)
+                dlg.exec()
+            else:
+                QMessageBox.warning(self, "Hata",
+                                    "İndirme bağlantısı bulunamadı (version.json dosyasında download_url tanımlı değil).")

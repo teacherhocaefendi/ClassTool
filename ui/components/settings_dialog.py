@@ -101,15 +101,15 @@ class SettingsDialog(QDialog):
         stored_hash = self.get_stored_pin_hash()
 
         if not verify_pin(stored_hash, curr):
-            QMessageBox.warning(self, "Error", "Current PIN is incorrect.")
+            QMessageBox.warning(self, LanguageService.get("error"), LanguageService.get("curr_pin_wrong"))
             return
 
         if len(new_p) < 4:
-            QMessageBox.warning(self, "Error", "New PIN must be at least 4 digits.")
+            QMessageBox.warning(self, LanguageService.get("error"), LanguageService.get("pin_short"))
             return
 
         if new_p != conf_p:
-            QMessageBox.warning(self, "Error", "New PINs do not match.")
+            QMessageBox.warning(self, LanguageService.get("error"), LanguageService.get("pins_mismatch"))
             return
 
         new_hash = hash_pin(new_p)
@@ -121,29 +121,33 @@ class SettingsDialog(QDialog):
             """, (new_hash,))
             conn.commit()
 
-        QMessageBox.information(self, "Success", "PIN updated successfully!")
+        QMessageBox.information(self, LanguageService.get("success"), LanguageService.get("pin_updated"))
         self.accept()
 
     def make_usb_key(self):
         drives = [f"{d}" for d in string.ascii_uppercase if os.path.exists(f"{d}:\\") and d not in ['C', 'D']]
         if not drives:
-            QMessageBox.warning(self, "No USB Found", "Please insert a USB flash drive first (Drive other than C/D).")
+            QMessageBox.warning(self, LanguageService.get("usb_not_found_title"), LanguageService.get("usb_not_found_msg"))
             return
 
         target_drive = drives[0]
         stored_hash = self.get_stored_pin_hash()
 
+        confirm_title = "Güvenlik USB'si Oluştur" if LanguageService.current_lang == "tr" else "Create Security USB"
+        confirm_msg = f"({target_drive}:) Sürücüsü Güvenlik Anahtarınız Yapılsın mı?\nHiçbir dosyanız silinmeyecektir." if LanguageService.current_lang == "tr" else f"Turn Drive ({target_drive}:) into your Security Dongle?\nNo files will be deleted."
+
         reply = QMessageBox.question(
-            self, "Create Security USB",
-            f"Turn Drive ({target_drive}:) into your Security Dongle?\nNo files will be deleted.",
+            self, confirm_title, confirm_msg,
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
         )
 
         if reply == QMessageBox.StandardButton.Yes:
             if create_usb_key_file(target_drive, stored_hash):
-                QMessageBox.information(self, "Success", f"USB Key successfully registered on drive {target_drive}:!")
+                succ_msg = f"USB Anahtar {target_drive}: sürücüsüne başarıyla kaydedildi!" if LanguageService.current_lang == "tr" else f"USB Key successfully registered on drive {target_drive}:!"
+                QMessageBox.information(self, LanguageService.get("success"), succ_msg)
             else:
-                QMessageBox.critical(self, "Error", "Failed to write key to USB drive.")
+                err_msg = "USB sürücüsüne anahtar yazılamadı." if LanguageService.current_lang == "tr" else "Failed to write key to USB drive."
+                QMessageBox.critical(self, LanguageService.get("error"), err_msg)
 
     def export_backup(self):
         file_path, _ = QFileDialog.getSaveFileName(self, "Export Backup", "class_tool_backup.json", "JSON Files (*.json)", options=QFileDialog.Option.DontUseNativeDialog)

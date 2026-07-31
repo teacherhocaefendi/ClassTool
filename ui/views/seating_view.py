@@ -536,6 +536,8 @@ class SeatingView(QWidget):
         self.load_classes()
 
     def load_classes(self):
+        current_class_id = self.class_selector.currentData()
+
         self.class_selector.blockSignals(True)
         self.class_selector.clear()
         classes = db.get_classes()
@@ -544,7 +546,20 @@ class SeatingView(QWidget):
         self.class_selector.blockSignals(False)
 
         if self.class_selector.count() > 0:
+            # Eski seçimi korumaya çalış
+            idx = self.class_selector.findData(current_class_id)
+            if idx >= 0:
+                self.class_selector.setCurrentIndex(idx)
+            else:
+                self.class_selector.setCurrentIndex(0)
             self.on_class_changed()
+        else:
+            # DÜZELTME: Sınıf kalmadıysa ekranı, öğrencileri ve tahtayı tamamen sıfırla
+            self.student_pool.clear()
+            self.layout_selector.blockSignals(True)
+            self.layout_selector.clear()
+            self.layout_selector.blockSignals(False)
+            self.generate_classroom_layout("classic")
 
     def on_class_changed(self):
         self.load_students_into_pool()
@@ -553,6 +568,11 @@ class SeatingView(QWidget):
     def refresh_layout_names_dropdown(self):
         class_id = self.class_selector.currentData()
         if not class_id:
+            self.layout_selector.blockSignals(True)
+            self.layout_selector.clear()
+            self.layout_selector.blockSignals(False)
+            self.student_pool.clear()
+            self.generate_classroom_layout("classic")
             return
 
         self.layout_selector.blockSignals(True)
@@ -604,7 +624,10 @@ class SeatingView(QWidget):
 
     def load_students_into_pool(self):
         self.student_pool.clear()
-        students = db.get_students()
+        class_id = self.class_selector.currentData()
+        if not class_id:
+            return
+        students = db.get_students(class_id)
         for s in students:
             item = QListWidgetItem(f"{s['first_name']} {s['last_name']}")
             item.setData(Qt.ItemDataRole.UserRole, f"{s['id']}|{s['first_name']}|{s['last_name']}|{s['gender']}")

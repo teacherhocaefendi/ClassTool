@@ -1,6 +1,6 @@
 from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout,
                              QListWidget, QTextBrowser, QLabel)
-from PyQt6.QtCore import Qt
+from PyQt6.QtCore import Qt, QTimer
 from services.theme_and_log_service import ThemeManager
 from services.language_service import LanguageService
 
@@ -51,7 +51,18 @@ class HelpView(QWidget):
         right_layout.addWidget(self.text_browser)
         main_layout.addLayout(right_layout, stretch=1)
 
+        # İLK YÜKLEME DÜZELTMESİ:
         self.list_topics.setCurrentRow(0)
+        self.display_help_content(0)
+
+        # Render/Repaint işlemini garantiye almak için kısa zamanlayıcı ile zorla
+        QTimer.singleShot(50, self.force_redraw)
+
+    def force_redraw(self):
+        """Pencere ilk çizildiğinde sağ paneldeki içeriklerin render olmasını zorlar."""
+        if hasattr(self, 'text_browser'):
+            self.text_browser.update()
+            self.text_browser.repaint()
 
     def load_topics(self):
         self.list_topics.blockSignals(True)
@@ -69,6 +80,37 @@ class HelpView(QWidget):
         current_row = self.list_topics.currentRow()
         if current_row >= 0:
             self.display_help_content(current_row)
+
+    def display_help_content(self, index):
+        contents = self.get_contents_tr() if LanguageService.current_lang == "tr" else self.get_contents_en()
+        is_dark = (ThemeManager.get_current_theme() == "dark")
+
+        if is_dark:
+            self.text_browser.setStyleSheet("""
+                QTextBrowser {
+                    background-color: #1E293B; border: 2px solid #334155; 
+                    border-radius: 8px; padding: 20px; font-size: 15px; color: #F8FAFC;
+                }
+                h2 { color: #60A5FA; margin-bottom: 12px; }
+                b { color: #38BDF8; }
+                i { color: #94A3B8; }
+                li { margin-bottom: 14px; }
+            """)
+        else:
+            self.text_browser.setStyleSheet("""
+                QTextBrowser {
+                    background-color: #FFFFFF; border: 2px solid #DFE1E6; 
+                    border-radius: 8px; padding: 20px; font-size: 15px; color: #172B4D;
+                }
+                h2 { color: #0052CC; margin-bottom: 12px; }
+                b { color: #0747A6; }
+                i { color: #5E6C84; }
+                li { margin-bottom: 14px; }
+            """)
+
+        self.text_browser.setHtml(contents.get(index, ""))
+        # İçerik değiştikten hemen sonra yeniden çizilmeye zorluyoruz
+        self.text_browser.update()
 
     def get_contents_tr(self):
         return {
@@ -233,35 +275,6 @@ class HelpView(QWidget):
                 <p>For questions, suggestions, or feedback, feel free to reach out via the contacts above.</p>
             """
         }
-
-    def display_help_content(self, index):
-        contents = self.get_contents_tr() if LanguageService.current_lang == "tr" else self.get_contents_en()
-        is_dark = (ThemeManager.get_current_theme() == "dark")
-
-        if is_dark:
-            self.text_browser.setStyleSheet("""
-                QTextBrowser {
-                    background-color: #1E293B; border: 2px solid #334155; 
-                    border-radius: 8px; padding: 20px; font-size: 15px; color: #F8FAFC;
-                }
-                h2 { color: #60A5FA; margin-bottom: 12px; }
-                b { color: #38BDF8; }
-                i { color: #94A3B8; }
-                li { margin-bottom: 14px; }
-            """)
-        else:
-            self.text_browser.setStyleSheet("""
-                QTextBrowser {
-                    background-color: #FFFFFF; border: 2px solid #DFE1E6; 
-                    border-radius: 8px; padding: 20px; font-size: 15px; color: #172B4D;
-                }
-                h2 { color: #0052CC; margin-bottom: 12px; }
-                b { color: #0747A6; }
-                i { color: #5E6C84; }
-                li { margin-bottom: 14px; }
-            """)
-
-        self.text_browser.setHtml(contents.get(index, ""))
 
     def retranslate_ui(self):
         self.lbl_topics.setText(LanguageService.get("guide_topics_title"))

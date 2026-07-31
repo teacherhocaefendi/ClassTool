@@ -10,7 +10,7 @@ DB_DIR.mkdir(parents=True, exist_ok=True)
 
 # UI CONSTANTS
 APP_NAME = "Smart Board Student Tracker"
-APP_VERSION = "1.1.0"
+APP_VERSION = "1.2.0"
 
 WINDOW_WIDTH = 1280
 WINDOW_HEIGHT = 720

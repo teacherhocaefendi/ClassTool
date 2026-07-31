@@ -311,6 +311,18 @@ class DBManager:
                            )
                            """)
 
+            cursor.execute("""
+                           CREATE TABLE IF NOT EXISTS class_notes
+                           (
+                               class_id
+                               INTEGER
+                               PRIMARY
+                               KEY,
+                               note
+                               TEXT
+                           )
+                           """)
+
             conn.commit()
 
     def add_class(self, name, academic_year):
@@ -326,10 +338,13 @@ class DBManager:
             cursor.execute("SELECT id, name, academic_year FROM classes ORDER BY name")
             return cursor.fetchall()
 
-    def get_students(self):
+    def get_students(self, class_id=None):
         with self.get_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute("SELECT id, student_number, first_name, last_name, gender FROM students")
+            if class_id:
+                cursor.execute("SELECT id, student_number, first_name, last_name, gender FROM students WHERE class_id = ?", (class_id,))
+            else:
+                cursor.execute("SELECT id, student_number, first_name, last_name, gender FROM students")
             return cursor.fetchall()
 
     def add_student(self, class_id, student_number, first_name, last_name, gender):
@@ -366,6 +381,34 @@ class DBManager:
     def delete_class(self, class_id):
         with self.get_connection() as conn:
             cursor = conn.cursor()
+
+            # Tablolar veritabanında henüz oluşmamışsa bile çökmemesi için garantiye alıyoruz
+            cursor.execute(
+                "CREATE TABLE IF NOT EXISTS seating_layouts_v2 (id INTEGER PRIMARY KEY, class_id INTEGER, layout_name TEXT, layout_json TEXT)")
+            cursor.execute(
+                "CREATE TABLE IF NOT EXISTS seating_layouts (class_id INTEGER PRIMARY KEY, layout_json TEXT)")
+            cursor.execute(
+                "CREATE TABLE IF NOT EXISTS group_history (id INTEGER PRIMARY KEY, class_id INTEGER, group_structure_json TEXT)")
+            cursor.execute("CREATE TABLE IF NOT EXISTS class_notes (class_id INTEGER PRIMARY KEY, note TEXT)")
+            cursor.execute(
+                "CREATE TABLE IF NOT EXISTS oral_grade_config (id INTEGER PRIMARY KEY, class_id INTEGER, oral_index INTEGER, hw_weight REAL, part_weight REAL, beh_weight REAL)")
+
+            # 1. Sınıfa bağlı yan tabloları temizle
+            cursor.execute("DELETE FROM seating_layouts_v2 WHERE class_id = ?", (class_id,))
+            cursor.execute("DELETE FROM seating_layouts WHERE class_id = ?", (class_id,))
+            cursor.execute("DELETE FROM group_history WHERE class_id = ?", (class_id,))
+            cursor.execute("DELETE FROM class_notes WHERE class_id = ?", (class_id,))
+            cursor.execute("DELETE FROM oral_grade_config WHERE class_id = ?", (class_id,))
+
+            # 2. Ödevleri ve ödev kontrollerini sil
+            cursor.execute("""
+                           DELETE
+                           FROM homework_checks
+                           WHERE homework_id IN (SELECT id FROM homeworks WHERE class_id = ?)
+                           """, (class_id,))
+            cursor.execute("DELETE FROM homeworks WHERE class_id = ?", (class_id,))
+
+            # 3. Öğrencileri ve sınıfı sil
             cursor.execute("DELETE FROM students WHERE class_id = ?", (class_id,))
             cursor.execute("DELETE FROM classes WHERE id = ?", (class_id,))
             conn.commit()

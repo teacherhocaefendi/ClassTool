@@ -366,6 +366,15 @@ class StudentView(QWidget):
             db.delete_class(class_id)
             self.load_classes()
 
+            # DÜZELTME: Ana penceremizdeki diğer açık sekmelerin verilerini anında sıfırla
+            main_window = self.window()
+            if hasattr(main_window, 'seating_view') and main_window.seating_view:
+                main_window.seating_view.load_classes()
+            if hasattr(main_window, 'group_view') and main_window.group_view:
+                main_window.group_view.load_classes()
+            if hasattr(main_window, 'homework_view') and main_window.homework_view:
+                main_window.homework_view.load_classes()
+
     def delete_selected_student(self):
         selected_rows = self.table.selectionModel().selectedRows()
         if not selected_rows:

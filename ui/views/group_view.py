@@ -135,6 +135,8 @@ class GroupView(QWidget):
             self.rules = dialog.rules
 
     def load_classes(self):
+        current_class_id = self.class_selector.currentData()
+
         self.class_selector.blockSignals(True)
         self.class_selector.clear()
         classes = db.get_classes()
@@ -143,8 +145,16 @@ class GroupView(QWidget):
         self.class_selector.blockSignals(False)
 
         if self.class_selector.count() > 0:
-            self.class_selector.setCurrentIndex(0)
+            idx = self.class_selector.findData(current_class_id)
+            if idx >= 0:
+                self.class_selector.setCurrentIndex(idx)
+            else:
+                self.class_selector.setCurrentIndex(0)
             self.load_latest_group_history()
+        else:
+            # DÜZELTME: Sınıf yoksa eski grupları ekrandan sil
+            self.current_groups = []
+            self.render_groups([])
 
     def generate_groups(self):
         class_id = self.class_selector.currentData()
@@ -231,6 +241,8 @@ class GroupView(QWidget):
     def load_latest_group_history(self):
         class_id = self.class_selector.currentData()
         if not class_id:
+            self.current_groups = []
+            self.render_groups([])
             return
 
         try:
@@ -249,7 +261,6 @@ class GroupView(QWidget):
                     self.render_groups([])
         except Exception:
             self.render_groups([])
-
     def retranslate_ui(self):
         self.btn_rules.setText(LanguageService.get("rules_btn"))
         self.btn_generate.setText(LanguageService.get("generate_groups"))

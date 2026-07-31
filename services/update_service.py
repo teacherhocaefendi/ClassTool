@@ -1,17 +1,19 @@
+import os
+import sys
 import json
 import urllib.request
+import subprocess
 from PyQt6.QtCore import QThread, pyqtSignal
-
-# PyCharm'ın dizini rahat bulabilmesi için sys.path importu:
+import ctypes
 import sys
 import os
+
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from config import APP_VERSION
-# GitHub kullanıcı adın ve repo adınla burayı güncelleyeceksin:
-# Örn: https://raw.githubusercontent.com/ammar/ClassTool/main/version.json
-GITHUB_USERNAME = "teacherhocaefendi"  # Buraya GitHub kullanıcı adını yaz
-REPO_NAME = "ClassTool"            # Reponun tam adı
+
+GITHUB_USERNAME = "teacherhocaefendi"
+REPO_NAME = "ClassTool"
 
 UPDATE_CHECK_URL = f"https://raw.githubusercontent.com/{GITHUB_USERNAME}/{REPO_NAME}/main/version.json"
 
@@ -31,22 +33,85 @@ class UpdateCheckWorker(QThread):
             with urllib.request.urlopen(req, timeout=5) as response:
                 if response.status == 200:
                     data = json.loads(response.read().decode('utf-8'))
-                    remote_version = data.get("version", "1.0.0")
+                    remote_version = data.get("version", "1.2.0")
 
                     if self.is_newer_version(remote_version, APP_VERSION):
                         self.update_available.emit(data)
                     else:
                         self.no_update.emit()
         except Exception as e:
-            # İnternet olmaması veya repoya ulaşılamaması durumunda uygulamanın çökmesini engeller
             self.error.emit(str(e))
 
     @staticmethod
     def is_newer_version(remote, current):
-        """Semantik sürüm karşılaştırması yapar (Örn: "1.1.0" > "1.0.0")."""
         try:
             r_parts = [int(x) for x in remote.split('.')]
             c_parts = [int(x) for x in current.split('.')]
             return r_parts > c_parts
         except Exception:
             return False
+
+
+class UpdateDownloaderWorker(QThread):
+    """Yeni sürüm EXE dosyasını arka planda yüzde bildirimi yaparak indirir."""
+    progress = pyqtSignal(int)
+    finished = pyqtSignal(str)
+    error = pyqtSignal(str)
+
+    def __init__(self, download_url, target_path, parent=None):
+        super().__init__(parent)
+        self.download_url = download_url
+        self.target_path = target_path
+
+    def run(self):
+        try:
+            req = urllib.request.Request(
+                self.download_url,
+                headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'}
+            )
+            with urllib.request.urlopen(req) as response:
+                total_size = int(response.info().get('Content-Length', 0))
+                bytes_downloaded = 0
+                block_size = 8192
+
+                with open(self.target_path, 'wb') as f:
+                    while True:
+                        buffer = response.read(block_size)
+                        if not buffer:
+                            break
+                        bytes_downloaded += len(buffer)
+                        f.write(buffer)
+                        if total_size > 0:
+                            percent = int((bytes_downloaded / total_size) * 100)
+                            self.progress.emit(percent)
+
+            self.finished.emit(self.target_path)
+        except Exception as e:
+            self.error.emit(str(e))
+
+
+def apply_update_and_restart(installer_path):
+    """
+    Inno Setup ile oluşturulmuş Kurulum EXE'sini (Setup) arka planda yönetici yetkisiyle çalıştırır.
+    """
+    if not getattr(sys, 'frozen', False):
+        print(f"[TEST MODU] Setup dosyası indirildi: {installer_path}. EXE modunda Inno Setup tetiklenecekti.")
+        return
+
+    # Inno Setup Parametreleri
+    args = '/SILENT /SUPPRESSMSGBOXES /NORESTART'
+
+    try:
+        # Windows API (ShellExecuteW) kullanarak 'runas' ile yönetici izni istiyoruz
+        ctypes.windll.shell32.ShellExecuteW(
+            None,
+            "runas",            # Yönetici haklarıyla çalıştır
+            installer_path,     # Çalıştırılacak Setup.exe
+            args,               # Parametreler (/SILENT vs.)
+            None,
+            1                   # SW_SHOWNORMAL
+        )
+        # Mevcut uygulamayı kapat ki Inno Setup dosyaları değiştirebilsin
+        sys.exit(0)
+    except Exception as e:
+        print(f"Yönetici yetkisi ile çalıştırma hatası: {e}")
