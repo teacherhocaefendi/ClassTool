@@ -1,5 +1,5 @@
 {
   "version": "1.2.1",
   "download_url": "https://github.com/teacherhocaefendi/ClassTool/releases/download/v1.2.1/ClassTool_Setup_v1.2.1.exe",
-  "changelog": "• Sınıf silme senkronizasyonu ve arayüz hataları düzeltildi.\n• Otomatik güncelleme altyapısı entegre edildi."
+  "changelog": "• Otomatik güncelleme altyapısı ve thread senkronizasyonu doğrulandı.\n• Performans ve kararlılık iyileştirmeleri yapıldı."
 }

@@ -1,12 +1,11 @@
 import os
 import sys
 import json
+import time  # <-- YENİ EKLENDİ
 import urllib.request
 import subprocess
 from PyQt6.QtCore import QThread, pyqtSignal
 import ctypes
-import sys
-import os
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -26,16 +25,24 @@ class UpdateCheckWorker(QThread):
 
     def run(self):
         try:
+            # Önbelleği (Cache) baypass etmek için dinamik timestamp ekliyoruz
+            cache_buster = int(time.time())
+            url_with_nocache = f"{UPDATE_CHECK_URL}?nocache={cache_buster}"
+
             req = urllib.request.Request(
-                UPDATE_CHECK_URL,
-                headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'}
+                url_with_nocache,
+                headers={
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
+                    'Cache-Control': 'no-cache'
+                }
             )
             with urllib.request.urlopen(req, timeout=5) as response:
                 if response.status == 200:
                     data = json.loads(response.read().decode('utf-8'))
-                    remote_version = data.get("version", "1.2.0")
+                    # 1.2.0 sabit değerini kaldırdık, boş string yaptık
+                    remote_version = data.get("version", "").strip()
 
-                    if self.is_newer_version(remote_version, APP_VERSION):
+                    if remote_version and self.is_newer_version(remote_version, APP_VERSION):
                         self.update_available.emit(data)
                     else:
                         self.no_update.emit()
@@ -50,6 +57,9 @@ class UpdateCheckWorker(QThread):
             return r_parts > c_parts
         except Exception:
             return False
+
+
+# ... (Dosyanın geri kalanı olan UpdateDownloaderWorker ve apply_update_and_restart kısımları aynı kalacak) ...
 
 
 class UpdateDownloaderWorker(QThread):

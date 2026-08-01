@@ -4,7 +4,7 @@ import os
 TARGET_EXTENSIONS = ['.py']
 IGNORE_DIRS = ['.venv', '.git', '__pycache__', '.idea']
 
-output_file = "tum_proje_kodlari.txt"
+output_file = "tum_proje_kodlari121.txt"
 
 with open(output_file, "w", encoding="utf-8") as outfile:
     for root, dirs, files in os.walk("."):

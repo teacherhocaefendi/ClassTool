@@ -11,13 +11,16 @@ from ui.views.help_view import HelpView
 from services.update_service import UpdateCheckWorker
 from ui.components.update_dialog import UpdateProgressDialog
 
+
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("Class Tool - Smart Board Tracker [Alpha 1.1.0]")
+        self.setWindowTitle("Class Tool - Smart Board Tracker [Alpha 1.2.1]")
         self.setMinimumSize(1024, 600)
         self.resize(1280, 720)
-        self.check_for_updates()
+
+        # DÜZELTME: Buradaki mükerrer check_for_updates() çağrısı silindi.
+
         self.seating_view = None
         self.group_view = None
         self.homework_view = None
@@ -53,12 +56,12 @@ class MainWindow(QMainWindow):
         sidebar_layout.setContentsMargins(0, 0, 0, 0)
         sidebar_layout.setSpacing(0)
 
-        logo_label = QLabel("Class Tool v1.2")
+        logo_label = QLabel("Class Tool v1.2.1")
         logo_label.setStyleSheet("color: #FFFFFF; font-size: 22px; font-weight: bold; padding: 18px;")
         logo_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         sidebar_layout.addWidget(logo_label)
 
-        # SEKMELER (DÜZELTİLDİ: KILAVUZ BUTONU DAHİL EDİLDİ)
+        # SEKMELER
         self.btn_roster = QPushButton(LanguageService.get("roster"))
         self.btn_seating = QPushButton(LanguageService.get("seating"))
         self.btn_groups = QPushButton(LanguageService.get("groups"))
@@ -127,7 +130,7 @@ class MainWindow(QMainWindow):
 
         main_layout.addWidget(sidebar)
 
-        # 2. STACKED WIDGET (DÜZELTİLDİ: TEKİL YÜKLEME VE BİNDİRME)
+        # 2. STACKED WIDGET
         self.stacked_widget = QStackedWidget()
         main_layout.addWidget(self.stacked_widget)
 
@@ -152,7 +155,10 @@ class MainWindow(QMainWindow):
         self.btn_homework.clicked.connect(lambda: self.switch_view(3, self.btn_homework))
         self.btn_analytics.clicked.connect(lambda: self.switch_view(4, self.btn_analytics))
         self.btn_help.clicked.connect(lambda: self.switch_view(5, self.btn_help))
+
+        # Güncelleme kontrolü TEK YERDEN ve en sağlıklı şekilde burada tetikleniyor
         self.check_for_updates()
+
         self.switch_view(0, self.btn_roster)
 
     def switch_view(self, index, active_button):
@@ -190,7 +196,6 @@ class MainWindow(QMainWindow):
 
         self.stacked_widget.setCurrentIndex(index)
 
-        # DÜZELTME: Sekmeye geçildiğinde sınıfları ve verileri mutlaka yenile (Grup ekranı artık sınıfları görecek)
         if index == 1 and self.seating_view:
             self.seating_view.load_classes()
         elif index == 2 and self.group_view:
@@ -230,7 +235,6 @@ class MainWindow(QMainWindow):
         self.btn_theme.setText(
             LanguageService.get("dark_mode") if self.current_theme == "light" else LanguageService.get("light_mode"))
 
-        # YENİ: Kılavuz ekranı yüklenmişse temasını anında yenile
         if hasattr(self, 'help_view') and self.help_view:
             self.help_view.refresh_theme()
 
@@ -238,7 +242,6 @@ class MainWindow(QMainWindow):
         new_lang = "en" if LanguageService.current_lang == "tr" else "tr"
         LanguageService.set_language(new_lang)
 
-        # 1. Sol Menü Metinlerini Güncelle
         self.btn_roster.setText(LanguageService.get("roster"))
         self.btn_seating.setText(LanguageService.get("seating"))
         self.btn_groups.setText(LanguageService.get("groups"))
@@ -251,7 +254,6 @@ class MainWindow(QMainWindow):
         self.btn_settings.setText(LanguageService.get("change_pin"))
         self.btn_timer.setText(LanguageService.get("timer"))
 
-        # 2. Açık Olan Tüm Sekmelerin Metinlerini Anında Güncelle
         if hasattr(self, 'student_view') and hasattr(self.student_view, 'retranslate_ui'):
             self.student_view.retranslate_ui()
 
@@ -279,12 +281,19 @@ class MainWindow(QMainWindow):
         self.timer_window.show()
 
     def check_for_updates(self):
+        if hasattr(self, 'update_worker') and self.update_worker and self.update_worker.isRunning():
+            return
+
         self.update_worker = UpdateCheckWorker()
+        # Sadece doğru sinyal bağlı kalmalı:
         self.update_worker.update_available.connect(self.on_update_available)
+        self.update_worker.no_update.connect(lambda: print("LOG: Sürüm güncel, yeni güncelleme yok."))
+        self.update_worker.error.connect(lambda err: print(f"LOG: Güncelleme kontrol hatası: {err}"))
         self.update_worker.start()
 
     def on_update_available(self, data):
-        remote_version = data.get("version", "1.2.0")
+        # DÜZELTME: Sabit 1.2.0 kaldırıldı
+        remote_version = data.get("version", "Yeni Sürüm")
         download_url = data.get("download_url", "")
         changelog = data.get("changelog", "Yeni güncellemeler ve performans iyileştirmeleri eklendi.")
 

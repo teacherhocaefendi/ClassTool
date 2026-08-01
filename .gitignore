@@ -4,7 +4,7 @@ __pycache__/
 build/
 dist/
 *.exe
-tum_proje_kodlari.txt
+tum_proje_kodlari121.txt
 *.db
 *.log
 *.pdf
