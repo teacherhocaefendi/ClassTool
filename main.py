@@ -44,7 +44,7 @@ def main():
     if os.path.exists(icon_path):
         app.setWindowIcon(QIcon(icon_path))
 
-    logger.info("Class Tool Uygulaması Başlatılıyor [Sürüm 1.2.1]...")
+    logger.info("Class Tool Uygulaması Başlatılıyor [Sürüm 1.2.2]...")
 
     def on_app_exit():
         try:
