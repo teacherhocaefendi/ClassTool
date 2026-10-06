@@ -1,5 +1,5 @@
 {
-  "version": "1.3.0",
-  "download_url": "https://github.com/teacherhocaefendi/ClassTool/releases/download/v1.3.0/ClassTool_Setup_v1.3.0.exe",
-  "changelog": "• Gelişmiş Analizler ve Raporlar motoru güncellendi (Trend analizi, net skor hesaplaması).\n• Modern iç pencereler, sesli geri bildirimler ve yeni temalar (Okyanus Gecesi, Kozmik Mor) eklendi.\n• Performans ve veri tutarlılığı iyileştirmeleri tamamlandı."
+  "version": "1.0.0",
+  "download_url": "https://github.com/teacherhocaefendi/ClassTool/releases/download/v1.0.0/ClassTool_Setup_v1.0.0.exe",
+  "changelog": "• MetriClass v1.0.0 Resmi İlk Kararlı Sürüm.\n• Akıllı sınıf yönetimi, yoklama, oturma planı, canlı etkinlikler ve analizler.\n• Bulut senkronizasyonu ve modern tema altyapısı."
 }
