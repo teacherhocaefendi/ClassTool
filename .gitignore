@@ -1,0 +1,12 @@
+﻿.venv/
+__pycache__/
+.idea/
+build/
+dist/
+*.exe
+tum_proje_kodlari121.txt
+*.db
+*.log
+*.pdf
+*.xlsx
+services/ocr_service.py
